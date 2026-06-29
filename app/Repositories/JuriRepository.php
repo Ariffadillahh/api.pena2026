@@ -51,21 +51,11 @@ class JuriRepository
     {
         $assignment = JuriAssignment::where('user_id', $userId)->first();
 
-        // \Illuminate\Support\Facades\Log::info('--- DEBUG JURI ---', [
-        //     'ID_User_Yg_Login' => $userId,
-        //     'Data_Assignment' => $assignment ? $assignment->toArray() : 'KOSONG/TIDAK ADA'
-        // ]);
-
         if (!$assignment || !$assignment->competition_id) {
             return null;
         }
 
         $competition = Competition::find($assignment->competition_id);
-
-        // \Illuminate\Support\Facades\Log::info('--- DEBUG LOMBA ---', [
-        //     'ID_Lomba_Dicari' => $assignment->competition_id,
-        //     'Data_Lomba' => $competition ? $competition->toArray() : 'LOMBA TIDAK DITEMUKAN'
-        // ]);
 
         return $competition;
     }

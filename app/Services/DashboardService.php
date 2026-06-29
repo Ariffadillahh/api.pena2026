@@ -2,10 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\Competition;
 use App\Repositories\DashboardRepository;
-use Illuminate\Support\Str;
-use Carbon\Carbon;
+
 
 class DashboardService
 {

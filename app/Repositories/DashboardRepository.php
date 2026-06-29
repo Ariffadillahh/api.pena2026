@@ -6,7 +6,6 @@ use App\Models\Competition;
 use App\Models\Team;
 use App\Models\Submission;
 use App\Models\TeamMember;
-use Illuminate\Support\Facades\DB;
 
 class DashboardRepository
 {
