@@ -32,6 +32,27 @@ class AttendanceController extends Controller
         return response()->json(['status' => 'success', 'message' => 'Jadwal dibuat!']);
     }
 
+    public function updateEvent(Request $request, $eventId)
+    {
+        $request->validate(['title' => 'required', 'date' => 'required|date']);
+
+        $event = AttendanceEvent::findOrFail($eventId);
+        $event->update([
+            'title' => $request->title,
+            'date' => $request->date,
+        ]);
+
+        return response()->json(['status' => 'success', 'message' => 'Jadwal berhasil diperbarui!']);
+    }
+
+    public function deleteEvent($eventId)
+    {
+        $event = AttendanceEvent::findOrFail($eventId);
+        $event->delete();
+
+        return response()->json(['status' => 'success', 'message' => 'Jadwal berhasil dihapus!']);
+    }
+
     public function scanQr(Request $request, $eventId)
     {
         $admin = $request->user();

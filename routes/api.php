@@ -82,6 +82,9 @@ Route::middleware(['auth:sanctum', 'role:rol_1a2b3c,rol_4d5e6f,rol_7g8h9i,rol_ko
         Route::post('/events', [AttendanceController::class, 'createEvent']);
         Route::get('/events/{eventId}/attendees', [AttendanceController::class, 'getAttendees']);
         Route::post('/events/{eventId}/scan', [AttendanceController::class, 'scanQr']);
+
+        Route::put('/events/{eventId}', [AttendanceController::class, 'updateEvent']);
+        Route::delete('/events/{eventId}', [AttendanceController::class, 'deleteEvent']);
     });
 });
 
