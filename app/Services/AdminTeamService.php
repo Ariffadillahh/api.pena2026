@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Repositories\AdminTeamRepository;
+use Exception;
+use Illuminate\Support\Facades\Storage;
 
 class AdminTeamService
 {
@@ -48,7 +50,7 @@ class AdminTeamService
             throw new \Exception("Akses Ditolak: Anda tidak memiliki izin untuk melihat tim.");
         }
 
-        $superRoles = ['rol_1a2b3c', 'rol_4d5e6f', 'rol_kobh21j'];  
+        $superRoles = ['rol_1a2b3c', 'rol_4d5e6f', 'rol_kobh21j'];
 
         if (in_array($user->role_id, $superRoles)) {
             return $this->repo->getTeamsByCompetition($competitionId, $perPage, $search, $status);
@@ -61,5 +63,23 @@ class AdminTeamService
         }
 
         return $this->repo->getTeamsByCompetition($competitionId, $perPage, $search, $status);
+    }
+
+    public function deleteTeam($id)
+    {
+        $team = $this->repo->findById($id);
+
+        if (!$team) {
+            throw new Exception("Data tim tidak ditemukan.");
+        }
+
+
+        $folderPath = 'registrations/' . $team->id;
+
+        if (Storage::disk('public')->exists($folderPath)) {
+            Storage::disk('public')->deleteDirectory($folderPath);
+        }
+
+        return $this->repo->delete($team);
     }
 }

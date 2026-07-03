@@ -75,6 +75,11 @@ class Team extends Model
         return $this->hasOne(Submission::class, 'team_id', 'id');
     }
 
+    public function submissions()
+    {
+        return $this->hasMany(Submission::class, 'team_id', 'id');
+    }
+
     public function attendance()
     {
         return $this->hasOne(TeamAttendance::class, 'team_id', 'id');

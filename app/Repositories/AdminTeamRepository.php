@@ -52,4 +52,14 @@ class AdminTeamRepository
             })
             ->paginate($perPage);
     }
+
+    public function findById($id)
+    {
+        return Team::find($id);
+    }
+
+    public function delete(Team $team)
+    {
+        return $team->delete();
+    }
 }

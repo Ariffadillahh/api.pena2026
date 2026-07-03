@@ -29,7 +29,7 @@ class AdminKaryaRepository
 
     public function getPaginatedKarya($competitionId, $perPage = 10, $filter = null, $search = null)
     {
-        $query = Team::with(['user', 'members', 'team_files'])
+        $query = Team::with(['user', 'members', 'team_files', 'submissions'])
             ->where('competition_id', $competitionId);
 
         if ($filter === 'sudah') {

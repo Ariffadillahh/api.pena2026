@@ -5,7 +5,7 @@ use App\Http\Controllers\Api\AdminJuriController;
 use App\Http\Controllers\Api\AdminKaryaController;
 use App\Http\Controllers\Api\AdminTeamController;
 use App\Http\Controllers\Api\AdminTicketController;
-use App\Http\Controllers\api\AttendanceController;
+use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CompetitionController;
 use App\Http\Controllers\Api\CriteriaController;
@@ -86,6 +86,8 @@ Route::middleware(['auth:sanctum', 'role:rol_1a2b3c,rol_4d5e6f,rol_7g8h9i,rol_ko
         Route::put('/events/{eventId}', [AttendanceController::class, 'updateEvent']);
         Route::delete('/events/{eventId}', [AttendanceController::class, 'deleteEvent']);
     });
+
+    Route::delete('/admin/teams/{id}', [AdminTeamController::class, 'destroy']);
 });
 
 Route::middleware(['auth:sanctum', 'role:4', 'throttle:api'])->group(function () {
@@ -103,6 +105,8 @@ Route::middleware(['auth:sanctum', 'role:4', 'throttle:api'])->group(function ()
     Route::get('/team-profile', [TeamController::class, 'getProfile']);
 
     Route::get('/peserta/announcements', [AdminAnnouncementController::class, 'getAnnouncements']);
+
+    Route::get('/peserta/my-team', [PesertaController::class, 'getMyTeam']);
 });
 
 Route::middleware(['auth:sanctum', 'role:rol_jms02ks6', 'throttle:api'])->group(function () {

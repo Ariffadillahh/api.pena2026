@@ -41,7 +41,7 @@ class LeaderboardController extends Controller
             $this->leaderboardService->finalizeTopTeams($competitionId);
             return response()->json([
                 'status' => 'success',
-                'message' => 'Top 5 tim teratas berhasil diubah statusnya menjadi lolos_top_10!'
+                'message' => 'Status tim berhasil diperbarui: Top 5 lolos Final dan sisanya tidak lolos!'
             ], 200);
         } catch (Exception $e) {
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 400);

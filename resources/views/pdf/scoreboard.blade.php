@@ -91,8 +91,21 @@
 <body>
     @foreach ($teams as $team)
         @php
-            $ketua = $team->members ? $team->members->where('role', 'Ketua')->first() : null;
-            $namaKetua = $ketua ? $ketua->name : 'Ketua Tidak Ditemukan';
+            $ketua = $team->members
+                ? $team->members->firstWhere('role', 'Ketua') ?? $team->members->firstWhere('role', 'ketua')
+                : null;
+
+            if (!$ketua && $team->members && $team->members->isNotEmpty()) {
+                $ketua = $team->members->first();
+            }
+
+            if ($ketua) {
+                $namaKetua = $ketua->name;
+            } elseif ($team->user) {
+                $namaKetua = $team->user->name;
+            } else {
+                $namaKetua = 'Ketua Tidak Ditemukan';
+            }
         @endphp
 
         <div class="header-logos">
@@ -116,10 +129,6 @@
 
         <table class="main-table">
             <tr>
-                <td style="width: 25%">Nomor</td>
-                <td class="font-bold">{{ $loop->iteration }}</td>
-            </tr>
-            <tr>
                 <td>Nama Tim</td>
                 <td class="font-bold">{{ $team->name }}</td>
             </tr>
@@ -132,8 +141,19 @@
                 <td>{{ $team->institution ?? 'Politeknik Negeri Jakarta' }}</td>
             </tr>
             <tr>
-                <td>Judul Karya</td>
-                <td>{{ $team->submission->original_filename ?? '-' }}</td>
+                <td>Nama File/Karya</td>
+                <td class="font-bold">
+                    @if (!empty($team->submission->original_filename))
+                        {{ $team->submission->original_filename }}
+                    @elseif (!empty($team->submission->gdrive_link))
+                        <a href="{{ $team->submission->gdrive_link }}" target="_blank"
+                            style="color: #0000EE; text-decoration: underline;">
+                            Lihat Karya (Google Drive)
+                        </a>
+                    @else
+                        -
+                    @endif
+                </td>
             </tr>
         </table>
 

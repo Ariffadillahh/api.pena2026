@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Team;
 use App\Services\AdminTeamService;
+use Exception;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AdminTeamController extends Controller
@@ -21,7 +23,7 @@ class AdminTeamController extends Controller
         $folders = $this->service->getFolders($request->user());
         return response()->json(['data' => $folders], 200);
     }
-    
+
 
     public function getTeams(Request $request, $competitionId)
     {
@@ -84,6 +86,23 @@ class AdminTeamController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Gagal mengambil data tim: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function destroy($id): JsonResponse
+    {
+        try {
+            $this->service->deleteTeam($id);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Tim beserta seluruh berkas berhasil dihapus secara permanen.'
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal menghapus tim: ' . $e->getMessage()
             ], 500);
         }
     }

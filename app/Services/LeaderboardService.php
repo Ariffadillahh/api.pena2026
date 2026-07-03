@@ -65,7 +65,7 @@ class LeaderboardService
                 'last_page'     => $paginated->lastPage(),
                 'per_page'      => $paginated->perPage(),
                 'total'         => $paginated->total(),
-                'is_all_scored' => $isAllScored 
+                'is_all_scored' => $isAllScored
             ]
         ];
     }
@@ -80,9 +80,19 @@ class LeaderboardService
             throw new Exception("Tidak ada tim yang dinilai untuk lomba ini.");
         }
 
-        $top5TeamIds = collect($teams)->take(5)->pluck('id')->toArray();
+        $allTeamIds = collect($teams)->pluck('id');
 
-        $this->leaderboardRepo->updateTeamsStatus($top5TeamIds, 'lolos_top_10');
+        $top5TeamIds = $allTeamIds->take(5)->toArray();
+
+        $remainingTeamIds = $allTeamIds->skip(5)->toArray();
+
+        if (!empty($top5TeamIds)) {
+            $this->leaderboardRepo->updateTeamsStatus($top5TeamIds, 'lolos_top_10');
+        }
+
+        if (!empty($remainingTeamIds)) {
+            $this->leaderboardRepo->updateTeamsStatus($remainingTeamIds, 'tidak_lolos');
+        }
 
         return true;
     }

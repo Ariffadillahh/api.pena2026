@@ -76,27 +76,49 @@ class AdminTicketController extends Controller
         ], 200);
     }
 
-    public function getAttendanceList()
+    public function getAttendanceList(\Illuminate\Http\Request $request)
     {
-        $teams = Team::with(['competition', 'attendance'])
-            ->where('status', 'lolos_top_10')
-            ->get();
+        $day = $request->query('day', 1);
 
-        $data = $teams->map(function ($team) {
+        $query = Team::with(['competition', 'attendance']);
+
+        if ($day == 1) {
+            $query->where('status', 'lolos_top_10')
+                ->whereHas('attendance', function ($q) {
+                    $q->where('day_1_status', 1);
+                });
+        } else {
+            $query->whereHas('attendance', function ($q) {
+                $q->where('day_2_status', 1);
+            });
+        }
+
+        $teams = $query->get();
+
+        $data = $teams->map(function ($team) use ($day) {
+            $status = false;
+            $time = null;
+
+            if ($day == 1) {
+                $status = $team->attendance?->day_1_status ?? false;
+                $time = $team->attendance?->day_1_scanned_at
+                    ? \Carbon\Carbon::parse($team->attendance->day_1_scanned_at)->format('H:i') . ' WIB'
+                    : null;
+            } else {
+                $status = $team->attendance?->day_2_status ?? false;
+                $time = $team->attendance?->day_2_scanned_at
+                    ? \Carbon\Carbon::parse($team->attendance->day_2_scanned_at)->format('H:i') . ' WIB'
+                    : null;
+            }
+
             return [
-                'id'           => $team->id,
-                'team_name'    => $team->name,
-                'competition'  => $team->competition->title ?? '-',
-                'category'     => $team->competition->category ?? '-',
-                'day_1_status' => $team->attendance->day_1_status ?? false,
-                'day_1_time'   => $team->attendance->day_1_scanned_at
-                    ? Carbon::parse($team->attendance->day_1_scanned_at)->format('H:i') . ' WIB'
-                    : null,
-
-                'day_2_status' => $team->attendance->day_2_status ?? false,
-                'day_2_time'   => $team->attendance->day_2_scanned_at
-                    ? Carbon::parse($team->attendance->day_2_scanned_at)->format('H:i') . ' WIB'
-                    : null,
+                'id'          => $team->id,
+                'team_name'   => $team->name,
+                'institution' => $team->institution ?? '-',
+                'competition' => $team->competition->title ?? '-',
+                'category'    => $team->competition->category ?? '-',
+                'status'      => $status,
+                'time'        => $time,
             ];
         });
 
