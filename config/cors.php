@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['https://adopted-dream-royal-receive.trycloudflare.com', 'http://localhost:5173'],
+    'allowed_origins' => ['https://penaarena.my.id', 'http://localhost:5173'],
 
     'allowed_origins_patterns' => [],
 

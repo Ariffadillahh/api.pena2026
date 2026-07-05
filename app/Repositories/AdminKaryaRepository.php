@@ -30,18 +30,20 @@ class AdminKaryaRepository
     public function getPaginatedKarya($competitionId, $perPage = 10, $filter = null, $search = null)
     {
         $query = Team::with(['user', 'members', 'team_files', 'submissions'])
-            ->where('competition_id', $competitionId);
+            ->where('competition_id', $competitionId)
+            ->where('status', '!=', 'draft');
 
         if ($filter === 'sudah') {
             $query->where('karya_uploaded', 1);
         } elseif ($filter === 'belum') {
             $query->where('karya_uploaded', 0);
         } else {
-            $query->orderBy('karya_uploaded', 'desc')->orderBy('created_at', 'desc');
+            $query->orderBy('karya_uploaded', 'desc')
+                ->orderBy('created_at', 'desc');
         }
 
         $query->when($search, function ($q, $search) {
-            return $q->where('name', 'like', '%' . $search . '%');
+            $q->where('name', 'like', '%' . $search . '%');
         });
 
         return $query->paginate($perPage);
