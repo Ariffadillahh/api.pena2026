@@ -2,16 +2,14 @@
 
 namespace App\Mail;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class UserRegistered extends Mailable implements ShouldQueue
+class UserRegistered extends Mailable
 {
-    use Queueable, SerializesModels;
+    use  SerializesModels;
 
     public $user;
     public $otp;
@@ -32,7 +30,7 @@ class UserRegistered extends Mailable implements ShouldQueue
     public function content(): Content
     {
         return new Content(
-            view: 'emails.user-registered', 
+            view: 'emails.user-registered',
         );
     }
 }

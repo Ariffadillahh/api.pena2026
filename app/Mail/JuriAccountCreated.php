@@ -2,23 +2,19 @@
 
 namespace App\Mail;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 class JuriAccountCreated extends Mailable
 {
-    use Queueable, SerializesModels;
+    use SerializesModels;
 
     public $user;
     public $rawPassword;
     public $loginUrl;
 
-    
     public function __construct($user, $rawPassword, $loginUrl)
     {
         $this->user = $user;
@@ -26,7 +22,6 @@ class JuriAccountCreated extends Mailable
         $this->loginUrl = $loginUrl;
     }
 
-   
     public function envelope(): Envelope
     {
         return new Envelope(
