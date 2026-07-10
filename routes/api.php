@@ -82,6 +82,7 @@ Route::middleware(['auth:sanctum', 'role:rol_1a2b3c,rol_4d5e6f,rol_7g8h9i,rol_ko
         Route::post('/events', [AttendanceController::class, 'createEvent']);
         Route::get('/events/{eventId}/attendees', [AttendanceController::class, 'getAttendees']);
         Route::post('/events/{eventId}/scan', [AttendanceController::class, 'scanQr']);
+        Route::post('/events/{eventId}/attendees/{userId}/status', [AttendanceController::class, 'updateAttendanceStatus']);
 
         Route::put('/events/{eventId}', [AttendanceController::class, 'updateEvent']);
         Route::delete('/events/{eventId}', [AttendanceController::class, 'deleteEvent']);
@@ -128,3 +129,5 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 
 Route::get('/competitions', [CompetitionController::class, 'getActiveCompetitions']);
 Route::get('/competitions/{slug}', [CompetitionController::class, 'show']);
+
+Route::get('/staff/qr-data', [AdminTicketController::class, 'getStaffQRData']);

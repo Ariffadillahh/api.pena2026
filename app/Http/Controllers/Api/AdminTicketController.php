@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Staff;
 use App\Models\Team;
 use App\Models\TeamAttendance;
 use Carbon\Carbon;
@@ -126,5 +127,30 @@ class AdminTicketController extends Controller
             'status' => 'success',
             'data'   => $data
         ], 200);
+    }
+
+    public function getStaffQRData()
+    {
+        try {
+            $staff = Staff::with('user:id,name')->get();
+
+            $data = $staff->map(function ($item) {
+                return [
+                    'user_id'  => $item->user_id,
+                    'name'     => $item->user ? $item->user->name : 'Unknown',
+                    'division' => $item->division ?? 'Tanpa Divisi'
+                ];
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'data'   => $data
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Gagal mengambil data staff: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
