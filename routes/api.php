@@ -89,6 +89,8 @@ Route::middleware(['auth:sanctum', 'role:rol_1a2b3c,rol_4d5e6f,rol_7g8h9i,rol_ko
     });
 
     Route::delete('/admin/teams/{id}', [AdminTeamController::class, 'destroy']);
+
+    Route::get('/staff/qr-data', [AdminTicketController::class, 'getStaffQRData']);
 });
 
 Route::middleware(['auth:sanctum', 'role:4', 'throttle:api'])->group(function () {
@@ -129,5 +131,3 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 
 Route::get('/competitions', [CompetitionController::class, 'getActiveCompetitions']);
 Route::get('/competitions/{slug}', [CompetitionController::class, 'show']);
-
-Route::get('/staff/qr-data', [AdminTicketController::class, 'getStaffQRData']);

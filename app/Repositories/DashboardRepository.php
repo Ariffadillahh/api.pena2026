@@ -11,7 +11,7 @@ class DashboardRepository
 {
     public function getTotalTim()
     {
-        return Team::count();
+        return Team::where('status', '!=', 'draft')->count();
     }
 
     public function getTotalAnggota()
