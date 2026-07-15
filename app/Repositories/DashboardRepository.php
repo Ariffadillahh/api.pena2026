@@ -16,7 +16,9 @@ class DashboardRepository
 
     public function getTotalAnggota()
     {
-        return TeamMember::count();
+        return TeamMember::whereHas('team', function ($query) {
+            $query->where('status', '!=', 'draft');
+        })->count();
     }
 
     public function getKaryaTerkumpul()
