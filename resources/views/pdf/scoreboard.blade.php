@@ -190,7 +190,7 @@
             <tr>
                 <td class="text-center font-bold">Notes</td>
                 <td colspan="2" style="font-size: 11.5px; line-height: 1.4; padding: 4px 10px; color: #333;">
-                    {{ $team->jury_notes ?? '-' }}
+                    {{ $team->notes ?? '-' }}
                 </td>
             </tr>
         </table>

@@ -58,6 +58,8 @@ Route::middleware(['auth:sanctum', 'role:rol_1a2b3c,rol_4d5e6f,rol_7g8h9i,rol_ko
 
     Route::get('/admin/teams/{id}/announcements', [AdminAnnouncementController::class, 'getTeamAnnouncements']);
 
+    Route::get('/admin/teams/folder/{folderId}/export', [AdminTeamController::class, 'exportTeamsInFolder']);
+
     Route::get('/juri-management', [AdminJuriController::class, 'index']);
     Route::post('/juri-management', [AdminJuriController::class, 'store']);
     Route::delete('/juri-management/{id}', [AdminJuriController::class, 'destroy']);
