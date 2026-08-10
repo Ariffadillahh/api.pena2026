@@ -93,7 +93,7 @@ class DashboardService
             }
         }
 
-        $deadlineString = '2026-08-10 00:00:00';
+        $deadlineString = '2026-08-15 00:00:00';
         $deadline = \Carbon\Carbon::parse($deadlineString);
         $statusPendaftaran = now()->lessThan($deadline) ? 'AKTIF' : 'DITUTUP';
 
