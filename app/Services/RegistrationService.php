@@ -33,7 +33,6 @@ class RegistrationService
                 [
                     'name' => $data['team_name'],
                     'institution' => $data['institution'],
-                    'wave_id' => $data['wave_id'] ?? null,
                     'status' => 'draft',
                     'payment_status' => 'menunggu_verifikasi'
                 ]
