@@ -33,12 +33,24 @@ class ScoreboardController extends Controller
         }
 
         $teams = $teams->map(function ($team) {
-            $total = 0;
-            foreach ($team->scores as $score) {
-                $bobot = $score->criteria->weight ?? 0;
-                $total += ($score->score * $bobot) / 100;
+            $groupedScores = $team->scores->groupBy('juri_id');
+            $jumlahJuri = $groupedScores->count();
+
+            $grandTotal = 0;
+
+            foreach ($groupedScores as $juriScores) {
+                $juriTotal = 0;
+                foreach ($juriScores as $score) {
+                    $bobot = $score->criteria->weight ?? 0;
+                    $juriTotal += ($score->score * $bobot) / 100;
+                }
+                $grandTotal += $juriTotal;
             }
-            $team->total_score = round($total, 2);
+
+            $rataRata = $jumlahJuri > 0 ? ($grandTotal / $jumlahJuri) : 0;
+
+            $team->total_score = round($rataRata, 2);
+
             return $team;
         })->sortByDesc('total_score')->values();
 
@@ -49,20 +61,16 @@ class ScoreboardController extends Controller
         $juriName = $juriAssignment && $juriAssignment->user ? $juriAssignment->user->name : 'Dewan Juri';
         $juriSignature = $juriAssignment ? $juriAssignment->signature : null;
 
-        // =========================================================
-        // PERBAIKAN: SIAPKAN NAMA FILE & URL DI AWAL
-        // =========================================================
+
         $fileNameBundle = 'Bundle_Scoreboard_' . \Illuminate\Support\Str::slug($competition->title) . '_' . time() . '.pdf';
         $pathBundle = 'competitions/' . $competition->id . '/score_board/' . $fileNameBundle;
 
-        // Hapus file lama jika ada
         if ($competition->scoreboard_link) {
             if (\Illuminate\Support\Facades\Storage::disk('public')->exists($competition->scoreboard_link)) {
                 \Illuminate\Support\Facades\Storage::disk('public')->delete($competition->scoreboard_link);
             }
         }
 
-        // Generate PDF dengan mengirimkan path URL ke Blade
         try {
             $pdfBundle = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.scoreboard', [
                 'teams' => $teams,
@@ -70,7 +78,7 @@ class ScoreboardController extends Controller
                 'is_bundle' => true,
                 'current_juri_name' => $juriName,
                 'current_juri_signature' => $juriSignature,
-                'bundle_qr_url' => $pathBundle // <-- TAMBAHAN: Variabel dikirim ke Blade
+                'bundle_qr_url' => $pathBundle
             ])->setPaper('a4', 'portrait');
 
             \Illuminate\Support\Facades\Storage::disk('public')->put($pathBundle, $pdfBundle->output());

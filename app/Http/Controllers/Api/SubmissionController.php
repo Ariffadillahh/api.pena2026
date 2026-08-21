@@ -30,7 +30,7 @@ class SubmissionController extends Controller
             return response()->json(['message' => 'Harap unggah file atau masukkan link G-Drive.'], 422);
         }
 
-        $deadlineString = env('DEADLINE_PENDAFTARAN', '2026-08-22 00:00:00');
+        $deadlineString = env('DEADLINE_PENDAFTARAN', '2026-08-22 23:59:59');
         $deadline = Carbon::parse($deadlineString);
 
         try {

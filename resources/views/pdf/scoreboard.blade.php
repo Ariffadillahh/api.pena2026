@@ -3,12 +3,7 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>
-        @if (isset($is_bundle) && $is_bundle)
-            Klasemen Akhir - {{ $competition->title ?? 'PENA 2026' }} {{ $competition->category ?? 'Kategori Umum' }}
-        @else
-            Scoreboard - {{ $competition->title ?? 'PENA 2026' }} {{ $competition->category ?? 'Kategori Umum' }}
-        @endif
+    <title>{{ isset($is_bundle) && $is_bundle ? 'Klasemen Akhir' : 'Scoreboard' }} - {{ $competition->title ?? 'PENA' }}
     </title>
     <style>
         body {
@@ -78,10 +73,6 @@
             background-color: #00FF00;
         }
 
-        .clear {
-            clear: both;
-        }
-
         .page-break {
             page-break-after: always;
         }
@@ -89,215 +80,271 @@
 </head>
 
 <body>
-    @foreach ($teams as $team)
+    @php
+        $loopTeams = isset($teams) ? $teams : (isset($team) ? [$team] : []);
+    @endphp
+
+    @foreach ($loopTeams as $teamItem)
         @php
-            $ketua = $team->members
-                ? $team->members->firstWhere('role', 'Ketua') ?? $team->members->firstWhere('role', 'ketua')
+            $ketua = $teamItem->members
+                ? $teamItem->members->firstWhere('role', 'Ketua') ?? $teamItem->members->firstWhere('role', 'ketua')
                 : null;
-
-            if (!$ketua && $team->members && $team->members->isNotEmpty()) {
-                $ketua = $team->members->first();
+            if (!$ketua && $teamItem->members && $teamItem->members->isNotEmpty()) {
+                $ketua = $teamItem->members->first();
             }
+            $namaKetua = $ketua ? $ketua->name : ($teamItem->user ? $teamItem->user->name : 'Ketua Tidak Ditemukan');
 
-            if ($ketua) {
-                $namaKetua = $ketua->name;
-            } elseif ($team->user) {
-                $namaKetua = $team->user->name;
-            } else {
-                $namaKetua = 'Ketua Tidak Ditemukan';
-            }
+            $teamNotes = is_array($teamItem->notes) ? $teamItem->notes : json_decode($teamItem->notes, true) ?? [];
+
+            $teamGroupedScores =
+                isset($groupedScores) && !isset($is_bundle) ? $groupedScores : $teamItem->scores->groupBy('juri_id');
+
+            $jumlahJuri = $teamGroupedScores->count();
+            $juriIndex = 1;
+            $summaryJuriScores = [];
         @endphp
 
-        <div class="header-logos">
-            @if (file_exists(public_path('assets/img/logo-pena.png')))
-                <img src="{{ public_path('assets/img/logo-pena.png') }}" style="height: 65px; width: auto;"
-                    alt="Logo PENA 2026">
-            @else
-                <div
-                    style="border: 1px solid #ccc; width: 150px; height: 35px; padding: 2px; text-align: center; font-size: 10px; line-height: 35px; background: #eee;">
-                    Logo PENA 2026
-                </div>
-            @endif
-        </div>
-
-        <div style="margin-top: -30px;">
-            <h1 class="title">Lembar Penilaian</h1>
-            <p class="title_lomba">
-                {{ $competition->title ?? 'Karya Tulis Ilmiah' }} - {{ $competition->category ?? 'Kategori Umum' }}
-            </p>
-        </div>
-
-        <table class="main-table">
-            <tr>
-                <td>Nama Tim</td>
-                <td class="font-bold">{{ $team->name }}</td>
-            </tr>
-            <tr>
-                <td>Nama Ketua Tim</td>
-                <td class="font-bold">{{ $namaKetua }} (Ketua)</td>
-            </tr>
-            <tr>
-                <td>Asal Instansi</td>
-                <td>{{ $team->institution ?? 'Politeknik Negeri Jakarta' }}</td>
-            </tr>
-            <tr>
-                <td>Nama File/Karya</td>
-                <td class="font-bold">
-                    @if (!empty($team->submission->original_filename))
-                        {{ $team->submission->original_filename }}
-                    @elseif (!empty($team->submission->gdrive_link))
-                        <a href="{{ $team->submission->gdrive_link }}" target="_blank"
-                            style="color: #0000EE; text-decoration: underline;">
-                            Lihat Karya (Google Drive)
-                        </a>
-                    @else
-                        -
-                    @endif
-                </td>
-            </tr>
-        </table>
-
-        <p style="margin-bottom: 5px">
-            Nilai diberikan dari rentang 0-100 (100 untuk nilai paling tinggi dan 0 nilai paling rendah)
-        </p>
-
-        <table class="main-table">
-            <tr class="score-header">
-                <th>Kriteria Penilaian</th>
-                <th style="width: 20%" class="text-center">Bobot (%)</th>
-                <th style="width: 15%" class="text-center">Nilai</th>
-            </tr>
-
-            @php $calculated_total = 0; @endphp
-            @foreach ($team->scores as $score)
-                @php
-                    $bobot = $score->criteria->weight ?? 0;
-                    $nilaiBerbobot = ($score->score * $bobot) / 100;
-                    $calculated_total += $nilaiBerbobot;
-                @endphp
+        @if ($jumlahJuri == 0)
+            <div class="header-logos">
+                @if (file_exists(public_path('assets/img/logo-pena.png')))
+                    <img src="{{ public_path('assets/img/logo-pena.png') }}" style="height: 65px; width: auto;"
+                        alt="Logo PENA">
+                @endif
+            </div>
+            <div style="margin-top: -30px;">
+                <h1 class="title">Lembar Penilaian</h1>
+                <p class="title_lomba">{{ $competition->title ?? '' }}</p>
+            </div>
+            <table class="main-table">
                 <tr>
-                    <td>{{ $score->criteria->name ?? 'Kriteria Penilaian' }}</td>
-                    <td class="text-center">{{ $bobot }}%</td>
-                    <td class="text-center">{{ $score->score }}</td>
+                    <td>Nama Tim</td>
+                    <td class="font-bold">{{ $teamItem->name }}</td>
                 </tr>
-            @endforeach
+                <tr>
+                    <td>Nama Ketua</td>
+                    <td class="font-bold">{{ $namaKetua }}</td>
+                </tr>
+            </table>
+            <p class="text-center font-bold" style="margin-top: 50px; color: red;">Tim ini belum menerima penilaian dari
+                dewan juri.</p>
+            @if (!$loop->last || (isset($is_bundle) && $is_bundle))
+                <div class="page-break"></div>
+            @endif
+        @else
+            @foreach ($teamGroupedScores as $juriId => $scores)
+                <div class="header-logos">
+                    @if (file_exists(public_path('assets/img/logo-pena.png')))
+                        <img src="{{ public_path('assets/img/logo-pena.png') }}" style="height: 65px; width: auto;"
+                            alt="Logo PENA">
+                    @endif
+                </div>
 
-            <tr>
-                <td colspan="2" class="text-center bg-blue font-bold">Total Nilai Akhir</td>
-                <td class="text-center bg-blue font-bold">{{ number_format($calculated_total, 2) }}</td>
-            </tr>
+                <div style="margin-top: -30px;">
+                    <h1 class="title">Lembar Penilaian {{ $jumlahJuri > 1 ? '(Juri ' . $juriIndex . ')' : '' }}</h1>
+                    <p class="title_lomba">{{ $competition->title ?? 'Karya Tulis Ilmiah' }} -
+                        {{ $competition->category ?? 'Kategori Umum' }}</p>
+                </div>
 
-            <tr>
-                <td class="text-center font-bold">Notes</td>
-                <td colspan="2" style="font-size: 11.5px; line-height: 1.4; padding: 4px 10px; color: #333;">
-                    {{ $team->notes ?? '-' }}
-                </td>
-            </tr>
-        </table>
+                <table class="main-table">
+                    <tr>
+                        <td style="width: 30%">Nama Tim</td>
+                        <td class="font-bold">{{ $teamItem->name }}</td>
+                    </tr>
+                    <tr>
+                        <td>Nama Ketua Tim</td>
+                        <td class="font-bold">{{ $namaKetua }} (Ketua)</td>
+                    </tr>
+                    <tr>
+                        <td>Asal Instansi</td>
+                        <td>{{ $teamItem->institution ?? '-' }}</td>
+                    </tr>
+                </table>
 
-        @php
-            $qrUrl = $current_qr_url ?? $team->score_board;
-            if ($qrUrl && !\Illuminate\Support\Str::startsWith($qrUrl, 'http')) {
-                $baseUrl = rtrim(env('FRONTEND_URL'), '/');
-                $qrUrl = $baseUrl . '/storage/' . $qrUrl;
-            }
-            $juriName = $current_juri_name ?? 'Dewan Juri';
-            $signature = $current_juri_signature ?? null;
-        @endphp
+                <table class="main-table">
+                    <tr class="score-header">
+                        <th>Kriteria Penilaian</th>
+                        <th style="width: 20%" class="text-center">Bobot (%)</th>
+                        <th style="width: 15%" class="text-center">Nilai</th>
+                    </tr>
 
-        <div style="width: 100%; margin-top: 30px; page-break-inside: avoid;">
-            <div style="float: right; width: 330px;">
-                <p style="text-align: right; margin: 0 0 10px 0; font-size: 14px;">
-                    Jakarta, {{ \Carbon\Carbon::now()->timezone('Asia/Jakarta')->translatedFormat('d F Y') }}
-                </p>
+                    @php $juriTotal = 0; @endphp
+                    @foreach ($scores as $score)
+                        @php
+                            $bobot = $score->criteria->weight ?? 0;
+                            $nilaiBerbobot = ($score->score * $bobot) / 100;
+                            $juriTotal += $nilaiBerbobot;
+                        @endphp
+                        <tr>
+                            <td>{{ $score->criteria->name ?? 'Kriteria' }}</td>
+                            <td class="text-center">{{ $bobot }}%</td>
+                            <td class="text-center">{{ $score->score }}</td>
+                        </tr>
+                    @endforeach
 
-                <div style="width: 100%; height: 90px;">
-                    <div style="float: left; width: 100px; text-align: right; height: 90px;">
-                        @if ($qrUrl)
-                            <img src="data:image/svg+xml;base64,{{ base64_encode(QrCode::format('svg')->size(90)->margin(0)->generate($qrUrl)) }}"
-                                alt="QR Code" style="margin-top: 2px;">
-                        @endif
-                    </div>
+                    @php $summaryJuriScores["Juri " . $juriIndex] = $juriTotal; @endphp
 
-                    <div
-                        style="float: right; width: 210px; height: 90px; border-top: 1.5px solid #000; border-right: 1.5px solid #000; border-bottom: 1.5px solid #000; position: relative;">
-                        <div
-                            style="position: absolute; top: -6px; left: 10px; background: white; padding: 0 5px; font-size: 10px; color: #000; line-height: 1;">
-                            digitally signed</div>
-                        <div
-                            style="position: absolute; bottom: -6px; left: 5px; background: white; padding: 0 5px; font-size: 10px; color: #000; line-height: 1;">
-                            PENA 2026</div>
+                    <tr>
+                        <td colspan="2" class="text-center bg-blue font-bold">Total Nilai
+                            {{ $jumlahJuri > 1 ? 'Juri ' . $juriIndex : 'Akhir' }}</td>
+                        <td class="text-center bg-blue font-bold">{{ number_format($juriTotal, 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-center font-bold">Catatan Juri</td>
+                        <td colspan="2" style="font-size: 11.5px; line-height: 1.4;">
+                            {{ $teamNotes['juri_' . $juriId] ?? '-' }}
+                        </td>
+                    </tr>
+                </table>
 
-                        <div style="text-align: center; width: 100%; height: 100%;">
-                            @if ($signature)
-                                <img src="{{ $signature }}"
-                                    style="
+                @php
+                    $qrUrl = '';
+
+                    if (isset($is_bundle) && $is_bundle) {
+                        $qrUrl = is_string($teamItem->score_board) ? $teamItem->score_board : '';
+                    } else {
+                        $qrUrl = $current_qr_url ?? ($teamItem->score_board ?? '');
+                    }
+
+                    if ($qrUrl && !\Illuminate\Support\Str::startsWith($qrUrl, 'http')) {
+                        $qrUrl = asset('storage/' . $qrUrl);
+                    }
+
+                    $juriName = isset($juriDetails[$juriId]['name'])
+                        ? $juriDetails[$juriId]['name']
+                        : $current_juri_name ?? 'Dewan Juri';
+                    $signature = isset($juriDetails[$juriId]['signature'])
+                        ? $juriDetails[$juriId]['signature']
+                        : $current_juri_signature ?? null;
+                @endphp
+
+                <div style="width: 100%; margin-top: 30px; page-break-inside: avoid;">
+                    <div style="float: right; width: 330px;">
+                        <p style="text-align: right; margin: 0 0 10px 0;">Jakarta,
+                            {{ \Carbon\Carbon::now()->timezone('Asia/Jakarta')->translatedFormat('d F Y') }}</p>
+                        <div style="width: 100%; height: 90px;">
+                            <div style="float: left; width: 100px; text-align: right; height: 90px;">
+                                @if ($qrUrl)
+                                    <img src="data:image/svg+xml;base64,{{ base64_encode(QrCode::format('svg')->size(90)->margin(0)->generate($qrUrl)) }}"
+                                        alt="QR Code" style="margin-top: 2px;">
+                                @endif
+                            </div>
+                            <div
+                                style="float: right; width: 210px; height: 90px; border-top: 1.5px solid #000; border-right: 1.5px solid #000; border-bottom: 1.5px solid #000; position: relative;">
+                                <div
+                                    style="position: absolute; top: -6px; left: 10px; background: white; padding: 0 5px; font-size: 10px; color: #000; line-height: 1;">
+                                    digitally signed</div>
+                                <div
+                                    style="position: absolute; bottom: -6px; left: 5px; background: white; padding: 0 5px; font-size: 10px; color: #000; line-height: 1;">
+                                    PENA 2026</div>
+
+                                <div style="text-align: center; width: 100%; height: 100%;">
+                                    @if ($signature)
+                                        <img src="{{ $signature }}"
+                                            style="
                                         max-height: 95px;
                                         max-width: 240px;
                                         object-fit: contain;
                                         display: block;
                                         margin: 0 auto;
                                     "
-                                    alt="TTD">
-                            @else
-                                <div style="height:90px; line-height:90px; color:#ccc; font-size:10px;">
-                                    TTD Kosong
+                                            alt="TTD">
+                                    @else
+                                        <div style="height:90px; line-height:90px; color:#ccc; font-size:10px;">
+                                            TTD Kosong
+                                        </div>
+                                    @endif
                                 </div>
-                            @endif
+                            </div>
                         </div>
+                        <div style="clear: both;"></div>
+                        <p style="text-align: right; margin: 15px 0 0 0;">{{ $juriName }}</p>
                     </div>
+                    <div style="clear: both;"></div>
                 </div>
 
-                <div style="clear: both;"></div>
+                @if ($juriIndex < $jumlahJuri || $jumlahJuri > 1 || !$loop->parent->last || (isset($is_bundle) && $is_bundle))
+                    <div class="page-break"></div>
+                @endif
 
-                <p style="text-align: right; margin: 15px 0 0 0; font-size: 14px;">
-                    {{ $juriName }}
-                </p>
-            </div>
-            <div style="clear: both;"></div>
-        </div>
+                @php $juriIndex++; @endphp
+            @endforeach
 
-        @if (!$loop->last)
-            <div class="page-break"></div>
+            @if ($jumlahJuri > 1)
+                <div class="header-logos">
+                    @if (file_exists(public_path('assets/img/logo-pena.png')))
+                        <img src="{{ public_path('assets/img/logo-pena.png') }}" style="height: 65px; width: auto;"
+                            alt="Logo PENA">
+                    @endif
+                </div>
+
+                <div style="margin-top: -30px;">
+                    <h1 class="title">Ringkasan Nilai Akhir</h1>
+                    <p class="title_lomba">{{ $competition->title ?? 'Kategori Umum' }}</p>
+                </div>
+
+                <table class="main-table" style="width: 70%; margin: 0 auto;">
+                    <tr>
+                        <td style="width: 30%;">Nama Tim</td>
+                        <td class="font-bold">{{ $teamItem->name }}</td>
+                    </tr>
+                </table>
+
+                <table class="main-table" style="width: 70%; margin: 0 auto; margin-top: 20px;">
+                    <tr class="score-header">
+                        <th>Penilai</th>
+                        <th class="text-center">Total Nilai</th>
+                    </tr>
+                    @foreach ($summaryJuriScores as $namaJuri => $totalNilai)
+                        <tr>
+                            <td class="font-bold">{{ $namaJuri }}</td>
+                            <td class="text-center">{{ number_format($totalNilai, 2) }}</td>
+                        </tr>
+                    @endforeach
+                    <tr>
+                        <td class="bg-blue font-bold text-center">NILAI FINAL (RATA-RATA)</td>
+                        <td class="bg-blue font-bold text-center" style="font-size: 16px;">
+                            {{ number_format($teamItem->total_score, 2) }}
+                        </td>
+                    </tr>
+                </table>
+
+                @if (!$loop->last || (isset($is_bundle) && $is_bundle))
+                    <div class="page-break"></div>
+                @endif
+            @endif
         @endif
     @endforeach
 
-
     @if (isset($is_bundle) && $is_bundle)
-        <div class="page-break"></div>
-
         <div style="margin-top: 30px;">
             <h1 class="title">KLASEMEN AKHIR</h1>
-            <p class="title_lomba">
-                {{ $competition->title ?? 'Karya Tulis Ilmiah' }} - {{ $competition->category ?? 'Kategori Umum' }}
-            </p>
+            <p class="title_lomba">{{ $competition->title ?? 'Kategori Umum' }}</p>
         </div>
 
         <table class="main-table">
             <tr>
                 <th class="text-center" style="width: 5%">No.</th>
                 <th class="text-center" style="width: 35%">Nama Individu/Tim</th>
-                <th class="text-center" style="width: 15%">Nilai</th>
+                <th class="text-center" style="width: 15%">Nilai Akhir</th>
                 <th class="text-center" style="width: 45%">Asal Instansi</th>
             </tr>
-            @foreach ($teams as $index => $team)
+            @foreach ($teams as $index => $teamItem)
                 @php
-                    $ketuaKlasemen = $team->members ? $team->members->where('role', 'Ketua')->first() : null;
-                    $namaKetuaKlasemen = $ketuaKlasemen ? $ketuaKlasemen->name : $team->name;
+                    $ketuaKlasemen = $teamItem->members ? $teamItem->members->where('role', 'Ketua')->first() : null;
+                    $namaKetuaKlasemen = $ketuaKlasemen ? $ketuaKlasemen->name : $teamItem->name;
                 @endphp
-
                 <tr class="{{ $index < 5 ? 'bg-lolos' : '' }}">
                     <td class="text-center">{{ $index + 1 }}</td>
                     <td>{{ $namaKetuaKlasemen }} (Ketua Tim)</td>
-                    <td class="text-center">{{ $team->total_score }}</td>
-                    <td class="text-center">{{ $team->institution ?? 'Politeknik Negeri Jakarta' }}</td>
+                    <td class="text-center">{{ $teamItem->total_score }}</td>
+                    <td class="text-center">{{ $teamItem->institution ?? '-' }}</td>
                 </tr>
             @endforeach
         </table>
 
         <table style="border-collapse: collapse; margin-left: 5%; margin-top: 10px;">
             <tr>
-                <td style="padding-right: 10px; font-size: 14px;">Keterangan Lolos Final:</td>
+                <td style="padding-right: 10px; font-size: 14px;">Keterangan Lolos Top 5:</td>
                 <td class="bg-lolos" style="width: 100px; height: 20px; border: 1px solid #000;"></td>
             </tr>
         </table>

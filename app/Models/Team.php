@@ -25,6 +25,11 @@ class Team extends Model
         'updated_by',
     ];
 
+    protected $casts = [
+        'score_board' => 'array',
+        'notes'       => 'array',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);

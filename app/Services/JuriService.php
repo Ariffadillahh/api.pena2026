@@ -9,7 +9,9 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\JuriAccountCreated;
 use App\Models\Criteria;
 use App\Models\JuriAssignment;
+use App\Models\Score;
 use App\Models\Team;
+use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
 use Exception;
@@ -181,65 +183,85 @@ class JuriService
 
     public function submitPenilaian($teamId, $juriId, $scoresData, $notes)
     {
-        $totalScore = 0;
-
         foreach ($scoresData as $data) {
             $this->juriRepo->saveScore($teamId, $juriId, $data['criteria_id'], $data['score']);
-
-            $criteria = Criteria::find($data['criteria_id']);
-            $bobot = $criteria->weight ?? 0;
-            $totalScore += ($data['score'] * $bobot) / 100;
         }
 
         $team = Team::with(['competition', 'submission'])->find($teamId);
-
-        if ($team) {
-            $team->update([
-                'total_score' => $totalScore,
-                'notes'       => $notes,
-                'status'      => 'dinilai'
-            ]);
-
-            $pdfUrl = $this->generateSingleScoreboard($team);
-
-            return $pdfUrl;
+        if (!$team) {
+            throw new \Exception("Data Tim tidak ditemukan.");
         }
 
-        throw new \Exception("Data Tim tidak ditemukan.");
+        $existingNotes = is_array($team->notes) ? $team->notes : json_decode($team->notes, true) ?? [];
+        if (!empty($notes)) {
+            $existingNotes['juri_' . $juriId] = $notes;
+        }
+
+        $allScores = Score::with('criteria')->where('team_id', $teamId)->get();
+        $groupedByJuri = $allScores->groupBy('juri_id');
+
+        $grandTotal = 0;
+        foreach ($groupedByJuri as $scoresPerJuri) {
+            $juriTotal = 0;
+            foreach ($scoresPerJuri as $score) {
+                $bobot = $score->criteria->weight ?? 0;
+                $juriTotal += ($score->score * $bobot) / 100;
+            }
+            $grandTotal += $juriTotal;
+        }
+
+        $jumlahJuri = $groupedByJuri->count();
+        $finalAverageScore = $jumlahJuri > 0 ? ($grandTotal / $jumlahJuri) : 0;
+
+        $team->update([
+            'total_score' => $finalAverageScore,
+            'notes'       => $existingNotes,
+            'status'      => 'dinilai'
+        ]);
+
+        $pdfUrl = $this->generateSingleScoreboard($team);
+
+        return $pdfUrl;
     }
 
     private function generateSingleScoreboard($team)
     {
-        $team = Team::with(['competition', 'submission', 'scores.criteria', 'members'])->find($team->id);
+        $teamData = Team::with(['competition', 'submission', 'scores.criteria', 'members'])->find($team->id);
 
-        $juri = Auth::user();
-        $assignment = JuriAssignment::where('user_id', $juri->id)
-            ->where('competition_id', $team->competition_id)->first();
-        $juriSignature = $assignment ? $assignment->signature : null;
+        $groupedScores = $teamData->scores->groupBy('juri_id');
 
-        $folderPath = 'registrations/' . $team->id . '/score_board';
+        $juriDetails = [];
+        foreach ($groupedScores->keys() as $juriId) {
+            $juriUser = User::find($juriId);
+            $assignment = JuriAssignment::where('user_id', $juriId)
+                ->where('competition_id', $teamData->competition_id)->first();
+
+            $juriDetails[$juriId] = [
+                'name' => $juriUser->name ?? 'Dewan Juri',
+                'signature' => $assignment ? $assignment->signature : null
+            ];
+        }
+
+        $folderPath = 'competitions/' . $teamData->id . '/score_board';
         $newFileName = 'scoreboard_' . time() . '.pdf';
         $newPath = $folderPath . '/' . $newFileName;
-
         $fullPublicUrl = asset('storage/' . $newPath);
 
-        if ($team->score_board) {
-            if (Storage::disk('public')->exists($team->score_board)) {
-                Storage::disk('public')->delete($team->score_board);
-            }
+        if (is_string($teamData->score_board) && Storage::disk('public')->exists($teamData->score_board)) {
+            Storage::disk('public')->delete($teamData->score_board);
         }
 
         $pdf = Pdf::loadView('pdf.scoreboard', [
-            'teams' => [$team],
-            'competition' => $team->competition,
+            'team' => $teamData,
+            'groupedScores' => $groupedScores, 
+            'juriDetails' => $juriDetails,     
+            'competition' => $teamData->competition,
             'current_qr_url' => $fullPublicUrl,
-            'current_juri_name' => $juri->name ?? 'Dewan Juri',
-            'current_juri_signature' => $juriSignature
         ])->setPaper('a4', 'portrait');
 
         Storage::disk('public')->put($newPath, $pdf->output());
 
-        $team->update(['score_board' => $newPath]);
+        $teamData->update(['score_board' => $newPath]);
 
         return $fullPublicUrl;
     }
