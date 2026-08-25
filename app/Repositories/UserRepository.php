@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\User;
+use Illuminate\Support\Facades\Log;
 
 class UserRepository
 {
@@ -13,7 +14,9 @@ class UserRepository
 
     public function findByEmail(string $email)
     {
-        return User::where('email', $email)->first();
+        $user = User::where('email', trim($email))->first();
+
+        return $user;
     }
 
     public function updatePassword($user, string $newPassword)

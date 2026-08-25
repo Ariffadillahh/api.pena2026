@@ -101,6 +101,15 @@ class AuthController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        $emailInput = $request->input('email');
+        return response()->json([
+            'debug_status' => 'berhenti_sementara',
+            'email_asli' => $emailInput,
+            'email_diapit_kutip' => "'" . $emailInput . "'",
+            'jumlah_karakter' => strlen($emailInput),
+            'panjang_karakter_seharusnya' => strlen('dafaakayzika@gmail.com')
+        ], 200);
+
         try {
             $this->authService->forgotPassword($request->all());
 

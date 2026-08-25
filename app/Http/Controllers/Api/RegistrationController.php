@@ -30,7 +30,6 @@ class RegistrationController extends Controller
     {
         $validated = $request->validate([
             'competition_id' => 'required|uuid',
-            'wave_id' => 'nullable|uuid',
             'team_name' => 'required|string|max:255',
             'institution' => 'required|string|max:255',
             'members' => 'required|array|min:1',
