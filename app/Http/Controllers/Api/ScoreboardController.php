@@ -29,7 +29,10 @@ class ScoreboardController extends Controller
             ->get();
 
         if ($teams->isEmpty()) {
-            return response()->json(['status' => 'error', 'message' => 'Belum ada tim yang memiliki nilai pada kategori ini.'], 404);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Belum ada tim yang memiliki nilai pada kategori ini.'
+            ], 404);
         }
 
         $teams = $teams->map(function ($team) {
@@ -48,19 +51,22 @@ class ScoreboardController extends Controller
             }
 
             $rataRata = $jumlahJuri > 0 ? ($grandTotal / $jumlahJuri) : 0;
-
             $team->total_score = round($rataRata, 2);
 
             return $team;
         })->sortByDesc('total_score')->values();
 
-        $juriAssignment = \App\Models\JuriAssignment::with('user')
+        $juriAssignments = \App\Models\JuriAssignment::with('user')
             ->where('competition_id', $competition_id)
-            ->first();
+            ->get();
 
-        $juriName = $juriAssignment && $juriAssignment->user ? $juriAssignment->user->name : 'Dewan Juri';
-        $juriSignature = $juriAssignment ? $juriAssignment->signature : null;
-
+        $juriDetails = [];
+        foreach ($juriAssignments as $assignment) {
+            $juriDetails[$assignment->user_id] = [
+                'name'      => $assignment->user ? $assignment->user->name : 'Dewan Juri',
+                'signature' => $assignment->signature
+            ];
+        }
 
         $fileNameBundle = 'Bundle_Scoreboard_' . \Illuminate\Support\Str::slug($competition->title) . '_' . time() . '.pdf';
         $pathBundle = 'competitions/' . $competition->id . '/score_board/' . $fileNameBundle;
@@ -73,11 +79,10 @@ class ScoreboardController extends Controller
 
         try {
             $pdfBundle = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.scoreboard', [
-                'teams' => $teams,
-                'competition' => $competition,
-                'is_bundle' => true,
-                'current_juri_name' => $juriName,
-                'current_juri_signature' => $juriSignature,
+                'teams'         => $teams,
+                'competition'   => $competition,
+                'is_bundle'     => true,
+                'juriDetails'   => $juriDetails, 
                 'bundle_qr_url' => $pathBundle
             ])->setPaper('a4', 'portrait');
 
@@ -87,13 +92,13 @@ class ScoreboardController extends Controller
             $fileUrlBundle = asset('storage/' . $pathBundle);
 
             return response()->json([
-                'status' => 'success',
+                'status'  => 'success',
                 'message' => 'Bundle PDF dan Klasemen seluruh tim berhasil diperbarui!',
-                'url' => $fileUrlBundle
+                'url'     => $fileUrlBundle
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => 'Gagal generate PDF: ' . $e->getMessage()
             ], 500);
         }
