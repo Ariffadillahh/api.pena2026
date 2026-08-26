@@ -324,19 +324,31 @@
         <table class="main-table">
             <tr>
                 <th class="text-center" style="width: 5%">No.</th>
-                <th class="text-center" style="width: 35%">Nama Individu/Tim</th>
+                <th class="text-center" style="width: 35%">Nama Tim - Ketua Tim</th>
                 <th class="text-center" style="width: 15%">Nilai Akhir</th>
                 <th class="text-center" style="width: 45%">Asal Instansi</th>
             </tr>
             @foreach ($teams as $index => $teamItem)
                 @php
-                    $ketuaKlasemen = $teamItem->members ? $teamItem->members->where('role', 'Ketua')->first() : null;
-                    $namaKetuaKlasemen = $ketuaKlasemen ? $ketuaKlasemen->name : $teamItem->name;
+                    $ketuaKlasemen = $teamItem->members
+                        ? $teamItem->members->firstWhere('role', 'Ketua') ??
+                            $teamItem->members->firstWhere('role', 'ketua')
+                        : null;
+
+                    if (!$ketuaKlasemen && $teamItem->members && $teamItem->members->isNotEmpty()) {
+                        $ketuaKlasemen = $teamItem->members->first();
+                    }
+
+                    $namaKetuaKlasemen = $ketuaKlasemen
+                        ? $ketuaKlasemen->name
+                        : ($teamItem->user
+                            ? $teamItem->user->name
+                            : 'Ketua Tidak Ditemukan');
                 @endphp
                 <tr class="{{ $index < 5 ? 'bg-lolos' : '' }}">
                     <td class="text-center">{{ $index + 1 }}</td>
-                    <td>{{ $namaKetuaKlasemen }} (Ketua Tim)</td>
-                    <td class="text-center">{{ $teamItem->total_score }}</td>
+                    <td>{{ $teamItem->name }} - {{ $namaKetuaKlasemen }}</td>
+                    <td class="text-center">{{ number_format($teamItem->total_score, 2) }}</td>
                     <td class="text-center">{{ $teamItem->institution ?? '-' }}</td>
                 </tr>
             @endforeach
