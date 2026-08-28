@@ -51,11 +51,13 @@ class DashboardService
             $isMahasiswa = \Illuminate\Support\Str::contains($kategoriLomba, 'mahasiswa') || \Illuminate\Support\Str::contains($title, 'mahasiswa');
 
             $timValidCount = $comp->teams->filter(function ($t) {
-                return $t->status === 'menunggu_penilaian' && $t->payment_status === 'valid';
+                return $t->payment_status !== 'ditolak'
+                    && !in_array($t->status, ['draft', 'menunggu_konfirmasi']);
             })->count();
 
             $timMenungguCount = $comp->teams->filter(function ($t) {
-                return $t->status === 'menunggu_konfirmasi';
+                return $t->status === 'menunggu_konfirmasi'
+                    && $t->payment_status !== 'ditolak';
             })->count();
 
             if (\Illuminate\Support\Str::contains($title, ['business', 'bussines', 'bisnis', 'bp'])) {
